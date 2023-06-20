@@ -159,6 +159,7 @@ jobs:
             (steps.download_artifact_storybook_static.outcome == 'success' && 'Updated') ||
             'Deleted'
           }}: ${{ env.branch_url }}/storybook
+          EOF
       - name: git commit and push
         run: |
           git config --local user.name "${{ github.workflow }}"
