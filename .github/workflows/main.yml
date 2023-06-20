@@ -120,20 +120,19 @@ jobs:
           name: storybook-static
           path: ${{ env.branch-dir }}/storybook
         continue-on-error: true
-      - run: git diff --exit-code
-        id: git-diff
-        continue-on-error: true
       - name: git commit and push
-        if: steps.git-diff.outcome == 'failure'
         run: |
           git config --local user.name "${{ github.workflow }}"
           git config --local user.email ""
           git add docs
-          cat << EOF > commit-message
-          ${{ env.ref }}
-          * Action:    ${{ github.event.repository.url }}/actions/runs/${{ github.run_id }}
-          * Coverage:  ${{ env.branch-url }}/coverage
-          * Storybook: ${{ env.branch-url }}/storybook
-          EOF
-          git commit -F commit-message
-          git push origin ${{ env.branch-name }}
+          git diff --exit-code
+          if [ $? -ne 0 ]; then
+            cat << EOF > commit-message
+            ${{ env.ref }}
+            * Action:    ${{ github.event.repository.url }}/actions/runs/${{ github.run_id }}
+            * Coverage:  ${{ env.branch-url }}/coverage
+            * Storybook: ${{ env.branch-url }}/storybook
+            EOF
+            git commit -F commit-message
+            git push origin ${{ env.branch-name }}
+          fi
