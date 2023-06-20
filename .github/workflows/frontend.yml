@@ -146,7 +146,7 @@ jobs:
       - run: |
           cat << EOF > commit-message
           ${{ (github.event_name == 'pull_request' && format('#{0} ({1})', github.event.pull_request.number, github.event.action)) || env.ref }}
-          ${{ github.event.pull_request.base.repo.html_url }}/actions/runs/${{ github.run_id }}
+          Action: ${{ github.event.pull_request.base.repo.html_url }}/actions/runs/${{ github.run_id }}
           ${{ (steps.download_artifact_lcov_report.outcome == 'success' && 'Updated') || 'Deleted' }}: ${{ env.branch_url }}/lcov-report
           ${{ (steps.download_artifact_storybook_static.outcome == 'success' && 'Updated') || 'Deleted' }}: ${{ env.branch_url }}/storybook
       - name: git commit and push
