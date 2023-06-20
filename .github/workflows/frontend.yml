@@ -21,6 +21,7 @@ concurrency:
 jobs:
   debug:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - run: echo "${{ toJson(github) }}"
 
