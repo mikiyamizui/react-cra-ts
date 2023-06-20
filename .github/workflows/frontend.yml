@@ -14,9 +14,9 @@ env:
   artifact_storybook_static: storybook-static
   artifact_lcov_report: lcov-report
 
-concurrency:
-  group: ${{ github.head_ref || github.ref_name }}-${{ github.workflow }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.head_ref || github.ref_name }}-${{ github.workflow }}
+#   cancel-in-progress: true
 
 jobs:
   debug:
