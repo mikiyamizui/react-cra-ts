@@ -6,9 +6,9 @@ on:
 
 env:
   ref: ${{ github.head_ref || github.ref_name }}
-  branch_name: github-pages
-  branch_dir: docs/${{ github.head_ref || github.ref_name }}
-  branch_url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.head_ref || github.ref_name }}
+  github_pages_branch_name: github-pages
+  github_pages_branch_dir: docs/${{ github.head_ref || github.ref_name }}
+  github_pages_branch_url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.head_ref || github.ref_name }}
   artifact_jest_coverage: jest-coverage
   artifact_storybook_coverage: storybook-coverage
   artifact_storybook_static: storybook-static
@@ -130,19 +130,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ env.branch_name }}
-      - run: rm -rf ${{ env.branch_dir }}
+          ref: ${{ env.github_pages_branch_name }}
+      - run: rm -rf ${{ env.github_pages_branch_dir }}
       - uses: actions/download-artifact@v3
         id: download_artifact_lcov_report
         with:
           name: ${{ env.artifact_lcov_report }}
-          path: ${{ env.branch_dir }}/lcov-report
+          path: ${{ env.github_pages_branch_dir }}/lcov-report
         continue-on-error: true
       - uses: actions/download-artifact@v3
         id: download_artifact_storybook_static
         with:
           name: ${{ env.artifact_storybook_static }}
-          path: ${{ env.branch_dir }}/storybook
+          path: ${{ env.github_pages_branch_dir }}/storybook
         continue-on-error: true
       - run: |
           cat << EOF > commit-message
@@ -154,11 +154,11 @@ jobs:
           ${{
             (steps.download_artifact_lcov_report.outcome == 'success' && 'Updated') ||
             'Deleted'
-          }}: ${{ env.branch_url }}/lcov-report
+          }}: ${{ env.github_pages_branch_url }}/lcov-report
           ${{
             (steps.download_artifact_storybook_static.outcome == 'success' && 'Updated') ||
             'Deleted'
-          }}: ${{ env.branch_url }}/storybook
+          }}: ${{ env.github_pages_branch_url }}/storybook
           EOF
       - name: git commit and push
         run: |
@@ -166,4 +166,4 @@ jobs:
           git config --local user.email ""
           git add docs
           git commit -F commit-message
-          git push origin ${{ env.branch_name }}
+          git push origin ${{ env.github_pages_branch_name }}
