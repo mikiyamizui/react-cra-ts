@@ -147,7 +147,7 @@ jobs:
       - run: |
           cat << EOF > commit-message
           ${{
-            (github.event_name == 'pull_request' && format('#{0} ({1})', github.event.pull_request.number, github.event.action)) ||
+            (github.event_name == 'pull_request' && format('{0} (PR #{1} {2})', env.ref, github.event.pull_request.number, github.event.action)) ||
             format('{0} ({1})', env.ref, github.event_name)
           }}
           Action: ${{ github.event.pull_request.base.repo.html_url }}/actions/runs/${{ github.run_id }}
