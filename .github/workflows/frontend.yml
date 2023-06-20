@@ -44,8 +44,8 @@ jobs:
 
   jest:
     needs: [setup]
-    runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -66,8 +66,8 @@ jobs:
 
   storybook:
     needs: [setup]
-    runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
