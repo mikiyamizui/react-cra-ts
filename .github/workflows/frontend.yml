@@ -120,7 +120,7 @@ jobs:
 
   github-pages:
     needs: [lcov]
-    if: needs.lcov.result != 'cancelled'
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
