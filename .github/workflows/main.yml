@@ -1,0 +1,139 @@
+name: main
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+  push:
+    branches: [main]
+
+env:
+  ref: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  jest:
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: node
+      - uses: actions/cache@v3
+        id: cache_node_modules
+        with:
+          path: "**/node_modules"
+          key: node_modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
+        if: ${{ steps.cache_node_modules.outputs.cache-hit != 'true' }}
+      - run: npx jest --colors --coverage --coverageDirectory coverage --passWithNoTests
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage-jest.json
+          path: coverage/coverage-final.json
+
+  storybook:
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: node
+      - uses: actions/cache@v3
+        id: cache_node_modules
+        with:
+          path: "**/node_modules"
+          key: node_modules-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/package-lock.json') }}
+      - run: npm ci
+        if: ${{ steps.cache_node_modules.outputs.cache-hit != 'true' }}
+      - run: npx storybook build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: storybook-static
+          path: storybook-static
+      - run: npx playwright install --with-deps chromium
+      - run: >
+          npx concurrently
+          -k
+          -s first
+          -n "storybook,test"
+          -c "magenta,blue"
+          "npx http-server storybook-static --port 6006 --silent"
+          "wait-on tcp:6006 && npx test-storybook --coverage --browsers chromium"
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage-storybook.json
+          path: coverage/storybook/coverage-storybook.json
+
+  coverage:
+    needs: [jest, storybook]
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: coverage-jest.json
+          path: coverage
+        continue-on-error: true
+      - uses: actions/download-artifact@v3
+        with:
+          name: coverage-storybook.json
+          path: coverage
+        continue-on-error: true
+      - run: npx nyc report --reporter=lcov -t coverage --report-dir coverage
+      - uses: actions/upload-artifact@v3
+        with:
+          name: lcov-report
+          path: coverage/lcov-report
+
+  github-pages:
+    needs: [coverage]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    env:
+      branch-name: github-pages
+      branch-dir: docs/${{ github.head_ref || github.ref_name }}
+      branch-url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.head_ref || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ env.branch-name }}
+      - run: rm -rf ${{ env.branch-dir }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: lcov-report
+          path: ${{ env.branch-dir }}/coverage
+        continue-on-error: true
+      - uses: actions/download-artifact@v3
+        with:
+          name: storybook-static
+          path: ${{ env.branch-dir }}/storybook
+        continue-on-error: true
+      - run: git diff --exit-code
+        id: git-diff
+        continue-on-error: true
+      - name: git commit and push
+        if: steps.git-diff.outcome == 'failure'
+        run: |
+          git config --local user.name "${{ github.workflow }}"
+          git config --local user.email ""
+          git add docs
+          cat << EOF > commit-message
+          ${{ env.ref }}
+          * Action:    ${{ github.event.repository.url }}/actions/runs/${{ github.run_id }}
+          * Coverage:  ${{ env.branch-url }}/coverage
+          * Storybook: ${{ env.branch-url }}/storybook
+          EOF
+          git commit -F commit-message
+          git push origin ${{ env.branch-name }}
