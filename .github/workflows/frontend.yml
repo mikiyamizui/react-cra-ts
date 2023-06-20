@@ -150,6 +150,7 @@ jobs:
             (github.event_name == 'pull_request' && format('{0} (PR #{1} {2})', env.ref, github.event.pull_request.number, github.event.action)) ||
             format('{0} ({1})', env.ref, github.event_name)
           }}
+          Commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.after }}
           Action: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ${{
             (steps.download_artifact_lcov_report.outcome == 'success' && 'Updated') ||
