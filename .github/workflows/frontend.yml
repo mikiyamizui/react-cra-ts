@@ -159,29 +159,6 @@ jobs:
           name: ${{ env.artifact_storybook_static }}
           path: ${{ env.github_pages_branch_dir }}/storybook
         continue-on-error: true
-      # - name: Git commit and push
-      #   run: |
-      #     cat << EOF > commit-message
-      #     ${{
-      #       (github.event_name == 'pull_request' && format('{0} (PR #{1} {2})', env.ref, github.event.pull_request.number, github.event.action)) ||
-      #       format('{0} ({1})', env.ref, github.event_name)
-      #     }}
-      #     ${{ (github.event.after != '' && format('Triggered via commit {0}', github.event.after)) || '' }}
-      #     Action: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      #     ${{
-      #       (steps.download_artifact_lcov_report.outcome == 'success' && 'Updated') ||
-      #       'Deleted'
-      #     }}: ${{ env.github_pages_branch_url }}/lcov-report
-      #     ${{
-      #       (steps.download_artifact_storybook_static.outcome == 'success' && 'Updated') ||
-      #       'Deleted'
-      #     }}: ${{ env.github_pages_branch_url }}/storybook
-      #     EOF
-      #     git config --local user.name "${{ github.workflow }}"
-      #     git config --local user.email ""
-      #     git add docs
-      #     git commit -F commit-message
-      #     git push origin ${{ env.github_pages_branch_name }}
       - name: Git commit and push
         run: |
           cat << EOF > commit-message
@@ -202,20 +179,17 @@ jobs:
           git add docs
           git commit -F commit-message
           git push origin ${{ env.github_pages_branch_name }}
-      - run: |
+      - name: Create PR comment
+        run: |
           cat << EOF >> pr-comment
           ### Coverage
           ${{ env.github_pages_branch_url }}/lcov-report
           \`\`\`
-          EOF
-      - run: cat coverage/text >> pr-comment
-      - run: |
-          cat << EOF >> pr-comment
+          $(cat coverage/text)
           \`\`\`
           ### Storybook
           ${{ env.github_pages_branch_url }}/storybook
           EOF
-      # - run: gh pr comment -F ./pr-comment "${{ github.event.pull_request.html_url }}"
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: github-pages
