@@ -166,6 +166,7 @@ jobs:
         run: |
           cat << EOF >> pr-comment
           ## Github Pages
+          > $(date +%Y-%m-%dT%H:%M:%S%:z)
           - Storybook  
           ${{ env.github_pages_branch_url }}/storybook
           - Coverage  
