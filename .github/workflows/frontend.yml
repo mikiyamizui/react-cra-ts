@@ -128,6 +128,9 @@ jobs:
       contents: write
       pages: write
       id-token: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -146,33 +149,24 @@ jobs:
       - name: Git commit and push
         run: |
           cat << EOF > commit-message
-          ${{ env.ref }} (${{ github.event_name }})
-          Triggered via ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} ${{ (github.event.after != '' && format('(Commit {0})', github.event.after)) || '' }}
+          ${{ env.ref }} (${{
+            (github.event_name == 'pull_request' &&
+              format('{0}, {1}', github.event_name, github.event.action)) ||
+              format('{0}', github.event_name)
+          }})
+          Triggered via ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} ${{ (github.event.after != '' && format('({0})', github.event.after)) || '' }}
           EOF
           git config --local user.name "${{ github.workflow }}"
           git config --local user.email ""
           git add docs
           git commit -F commit-message
           git push origin ${{ env.github_pages_branch_name }}
-
-  pr-comment:
-    needs: [github-pages]
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Create PR comment
-        run: |
-          cat << EOF >> pr-comment
-          ## GitHub Pages
-          - Storybook
-          ${{ env.github_pages_branch_url }}/storybook
-          - Coverage
-          ${{ env.github_pages_branch_url }}/lcov-report
-          EOF
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: github-pages
-          path: pr-comment
+          message: |
+            ## GitHub Pages
+            - Storybook
+            ${{ env.github_pages_branch_url }}/storybook
+            - Coverage
+            ${{ env.github_pages_branch_url }}/lcov-report
