@@ -127,6 +127,9 @@ jobs:
       contents: write
       pages: write
       id-token: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -144,7 +147,7 @@ jobs:
           name: ${{ env.artifact_storybook_static }}
           path: ${{ env.github_pages_branch_dir }}/storybook
         continue-on-error: true
-      - name: Create commit message
+      - name: Git commit and push
         run: |
           cat << EOF > commit-message
           ${{
@@ -162,10 +165,23 @@ jobs:
             'Deleted'
           }}: ${{ env.github_pages_branch_url }}/storybook
           EOF
-      - name: Git commit and push
-        run: |
           git config --local user.name "${{ github.workflow }}"
           git config --local user.email ""
           git add docs
           git commit -F commit-message
           git push origin ${{ env.github_pages_branch_name }}
+      - name: Add PR comment
+        # if: github.event.action == 'opened'
+        run: |
+          cat << EOF > pr-comment
+          ## Github Pages
+          - ${{
+            (steps.download_artifact_lcov_report.outcome == 'success' && 'Updated') ||
+            'Deleted'
+          }}: ${{ env.github_pages_branch_url }}/lcov-report
+          - ${{
+            (steps.download_artifact_storybook_static.outcome == 'success' && 'Updated') ||
+            'Deleted'
+          }}: ${{ env.github_pages_branch_url }}/storybook
+          EOF
+          gh pr comment -F ./pr-comment "${{ github.event.pull_request.html_url }}"
