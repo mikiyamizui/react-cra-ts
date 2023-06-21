@@ -174,8 +174,9 @@ jobs:
         # if: github.event.action == 'opened'
         run: |
           cat << EOF > pr-comment
-          ## Github Pages
-          - Coverage Report: ${{ env.github_pages_branch_url }}/lcov-report
-          - Storybook: ${{ env.github_pages_branch_url }}/storybook
+          ### Coverage Report
+          ${{ env.github_pages_branch_url }}/lcov-report
+          ### Storybook
+          ${{ env.github_pages_branch_url }}/storybook
           EOF
           gh pr comment -F ./pr-comment "${{ github.event.pull_request.html_url }}"
