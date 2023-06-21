@@ -13,6 +13,7 @@ env:
   artifact_storybook_coverage: storybook-coverage
   artifact_storybook_static: storybook-static
   artifact_lcov_report: lcov-report
+  artifact_lcov_text: lcov-text
 
 # concurrency:
 #   group: ${{ github.head_ref || github.ref_name }}-${{ github.workflow }}
@@ -113,11 +114,16 @@ jobs:
           name: ${{ env.artifact_storybook_coverage }}
           path: coverage
         continue-on-error: true
-      - run: npx nyc report --reporter=lcov -t coverage --report-dir coverage
+      - run: npx nyc report -t coverage --reporter=lcov --report-dir coverage
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ env.artifact_lcov_report }}
           path: coverage/lcov-report
+      - run: npx nyc report -t coverage --reporter=text > coverage/lcov-text
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.artifact_lcov_text }}
+          path: coverage/lcov-text
 
   github-pages:
     needs: [lcov]
@@ -142,18 +148,44 @@ jobs:
           path: ${{ env.github_pages_branch_dir }}/lcov-report
         continue-on-error: true
       - uses: actions/download-artifact@v3
+        id: download_artifact_lcov_text
+        with:
+          name: ${{ env.artifact_lcov_text }}
+          path: ${{ env.github_pages_branch_dir }}/lcov-text
+        continue-on-error: true
+      - uses: actions/download-artifact@v3
         id: download_artifact_storybook_static
         with:
           name: ${{ env.artifact_storybook_static }}
           path: ${{ env.github_pages_branch_dir }}/storybook
         continue-on-error: true
+      # - name: Git commit and push
+      #   run: |
+      #     cat << EOF > commit-message
+      #     ${{
+      #       (github.event_name == 'pull_request' && format('{0} (PR #{1} {2})', env.ref, github.event.pull_request.number, github.event.action)) ||
+      #       format('{0} ({1})', env.ref, github.event_name)
+      #     }}
+      #     ${{ (github.event.after != '' && format('Triggered via commit {0}', github.event.after)) || '' }}
+      #     Action: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      #     ${{
+      #       (steps.download_artifact_lcov_report.outcome == 'success' && 'Updated') ||
+      #       'Deleted'
+      #     }}: ${{ env.github_pages_branch_url }}/lcov-report
+      #     ${{
+      #       (steps.download_artifact_storybook_static.outcome == 'success' && 'Updated') ||
+      #       'Deleted'
+      #     }}: ${{ env.github_pages_branch_url }}/storybook
+      #     EOF
+      #     git config --local user.name "${{ github.workflow }}"
+      #     git config --local user.email ""
+      #     git add docs
+      #     git commit -F commit-message
+      #     git push origin ${{ env.github_pages_branch_name }}
       - name: Git commit and push
         run: |
           cat << EOF > commit-message
-          ${{
-            (github.event_name == 'pull_request' && format('{0} (PR #{1} {2})', env.ref, github.event.pull_request.number, github.event.action)) ||
-            format('{0} ({1})', env.ref, github.event_name)
-          }}
+          ${{ env.ref }} (${{ github.event_name }})
           ${{ (github.event.after != '' && format('Triggered via commit {0}', github.event.after)) || '' }}
           Action: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           ${{
@@ -170,13 +202,19 @@ jobs:
           git add docs
           git commit -F commit-message
           git push origin ${{ env.github_pages_branch_name }}
-      - name: Add PR comment
-        # if: github.event.action == 'opened'
-        run: |
-          cat << EOF > pr-comment
-          ### Coverage Report
+      - run: |
+          cat << EOF >> pr-comment
+          ### Coverage
           ${{ env.github_pages_branch_url }}/lcov-report
+          EOF
+      - run: cat ${{ env.github_pages_branch_dir }}/lcov-text >> pr-comment
+      - run: |
+          cat << EOF >> pr-comment
           ### Storybook
           ${{ env.github_pages_branch_url }}/storybook
           EOF
-          gh pr comment -F ./pr-comment "${{ github.event.pull_request.html_url }}"
+      # - run: gh pr comment -F ./pr-comment "${{ github.event.pull_request.html_url }}"
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: github-pages
+          message: pr-comment
