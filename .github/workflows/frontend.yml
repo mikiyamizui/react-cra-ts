@@ -114,16 +114,16 @@ jobs:
           name: ${{ env.artifact_storybook_coverage }}
           path: coverage
         continue-on-error: true
+      - run: npx nyc report -t coverage --reporter=text > coverage/text
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.artifact_lcov_text }}
+          path: coverage
       - run: npx nyc report -t coverage --reporter=lcov --report-dir coverage
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ env.artifact_lcov_report }}
           path: coverage/lcov-report
-      - run: npx nyc report -t coverage --reporter=text > coverage/lcov-text
-      - uses: actions/upload-artifact@v3
-        with:
-          name: ${{ env.artifact_lcov_text }}
-          path: coverage/lcov-text
 
   github-pages:
     needs: [lcov]
@@ -142,16 +142,16 @@ jobs:
           ref: ${{ env.github_pages_branch_name }}
       - run: rm -rf ${{ env.github_pages_branch_dir }}
       - uses: actions/download-artifact@v3
+        id: download_artifact_lcov_text
+        with:
+          name: ${{ env.artifact_lcov_text }}
+          path: coverage
+        continue-on-error: true
+      - uses: actions/download-artifact@v3
         id: download_artifact_lcov_report
         with:
           name: ${{ env.artifact_lcov_report }}
           path: ${{ env.github_pages_branch_dir }}/lcov-report
-        continue-on-error: true
-      - uses: actions/download-artifact@v3
-        id: download_artifact_lcov_text
-        with:
-          name: ${{ env.artifact_lcov_text }}
-          path: ${{ env.github_pages_branch_dir }}/lcov-text
         continue-on-error: true
       - uses: actions/download-artifact@v3
         id: download_artifact_storybook_static
@@ -207,7 +207,7 @@ jobs:
           ### Coverage
           ${{ env.github_pages_branch_url }}/lcov-report
           EOF
-      - run: cat ${{ env.github_pages_branch_dir }}/lcov-text >> pr-comment
+      - run: cat coverage/text >> pr-comment
       - run: |
           cat << EOF >> pr-comment
           ### Storybook
