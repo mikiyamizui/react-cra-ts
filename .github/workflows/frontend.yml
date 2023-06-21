@@ -175,13 +175,7 @@ jobs:
         run: |
           cat << EOF > pr-comment
           ## Github Pages
-          - ${{
-            (steps.download_artifact_lcov_report.outcome == 'success' && 'Updated') ||
-            'Deleted'
-          }}: ${{ env.github_pages_branch_url }}/lcov-report
-          - ${{
-            (steps.download_artifact_storybook_static.outcome == 'success' && 'Updated') ||
-            'Deleted'
-          }}: ${{ env.github_pages_branch_url }}/storybook
+          - Coverage Report: ${{ env.github_pages_branch_url }}/lcov-report
+          - Storybook: ${{ env.github_pages_branch_url }}/storybook
           EOF
           gh pr comment -F ./pr-comment "${{ github.event.pull_request.html_url }}"
