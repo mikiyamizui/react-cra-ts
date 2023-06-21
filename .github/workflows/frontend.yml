@@ -5,6 +5,7 @@ on:
     branches: [main]
 
 env:
+  TZ: Asia/Tokyo
   ref: ${{ github.head_ref || github.ref_name }}
   github_pages_branch_name: github-pages
   github_pages_branch_dir: docs/${{ github.head_ref || github.ref_name }}
@@ -14,16 +15,16 @@ env:
   artifact_storybook_static: storybook-static
   artifact_lcov_report: lcov-report
 
-# concurrency:
-#   group: ${{ github.head_ref || github.ref_name }}-${{ github.workflow }}
-#   cancel-in-progress: true
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
-  debug:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - run: echo "${{ toJson(github) }}"
+  # debug:
+  #   runs-on: ubuntu-latest
+  #   continue-on-error: true
+  #   steps:
+  #     - run: echo "${{ toJson(github) }}"
 
   setup:
     runs-on: ubuntu-latest
@@ -113,7 +114,7 @@ jobs:
           name: ${{ env.artifact_storybook_coverage }}
           path: coverage
         continue-on-error: true
-      - run: npx nyc report --reporter=lcov -t coverage --report-dir coverage
+      - run: npx nyc report -t coverage --reporter=lcov --report-dir coverage
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ env.artifact_lcov_report }}
@@ -133,39 +134,45 @@ jobs:
           ref: ${{ env.github_pages_branch_name }}
       - run: rm -rf ${{ env.github_pages_branch_dir }}
       - uses: actions/download-artifact@v3
-        id: download_artifact_lcov_report
         with:
           name: ${{ env.artifact_lcov_report }}
           path: ${{ env.github_pages_branch_dir }}/lcov-report
         continue-on-error: true
       - uses: actions/download-artifact@v3
-        id: download_artifact_storybook_static
         with:
           name: ${{ env.artifact_storybook_static }}
           path: ${{ env.github_pages_branch_dir }}/storybook
         continue-on-error: true
-      - name: Create commit message
-        run: |
-          cat << EOF > commit-message
-          ${{
-            (github.event_name == 'pull_request' && format('{0} (PR #{1} {2})', env.ref, github.event.pull_request.number, github.event.action)) ||
-            format('{0} ({1})', env.ref, github.event_name)
-          }}
-          ${{ (github.event.after != '' && format('Triggered via commit {0}', github.event.after)) || '' }}
-          Action: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          ${{
-            (steps.download_artifact_lcov_report.outcome == 'success' && 'Updated') ||
-            'Deleted'
-          }}: ${{ env.github_pages_branch_url }}/lcov-report
-          ${{
-            (steps.download_artifact_storybook_static.outcome == 'success' && 'Updated') ||
-            'Deleted'
-          }}: ${{ env.github_pages_branch_url }}/storybook
-          EOF
       - name: Git commit and push
         run: |
+          cat << EOF > commit-message
+          ${{ env.ref }} (${{ github.event_name }})
+          Triggered via ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} ${{ (github.event.after != '' && format('(Commit {0})', github.event.after)) || '' }}
+          EOF
           git config --local user.name "${{ github.workflow }}"
           git config --local user.email ""
           git add docs
           git commit -F commit-message
           git push origin ${{ env.github_pages_branch_name }}
+
+  pr-comment:
+    needs: [github-pages]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Create PR comment
+        run: |
+          cat << EOF >> pr-comment
+          ## GitHub Pages
+          - Storybook
+          ${{ env.github_pages_branch_url }}/storybook
+          - Coverage
+          ${{ env.github_pages_branch_url }}/lcov-report
+          EOF
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: github-pages
+          path: pr-comment
