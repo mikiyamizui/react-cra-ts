@@ -217,4 +217,4 @@ jobs:
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: github-pages
-          message: pr-comment
+          path: pr-comment
