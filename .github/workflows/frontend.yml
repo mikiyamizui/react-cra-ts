@@ -170,6 +170,7 @@ jobs:
           ${{ env.github_pages_branch_url }}/storybook
           - Coverage  
           ${{ env.github_pages_branch_url }}/lcov-report
+          $(date --iso-8601)
           EOF
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
