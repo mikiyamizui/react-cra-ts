@@ -144,7 +144,8 @@ jobs:
           name: ${{ env.artifact_storybook_static }}
           path: ${{ env.github_pages_branch_dir }}/storybook
         continue-on-error: true
-      - run: |
+      - name: Create commit message
+        run: |
           cat << EOF > commit-message
           ${{
             (github.event_name == 'pull_request' && format('{0} (PR #{1} {2})', env.ref, github.event.pull_request.number, github.event.action)) ||
@@ -161,7 +162,7 @@ jobs:
             'Deleted'
           }}: ${{ env.github_pages_branch_url }}/storybook
           EOF
-      - name: git commit and push
+      - name: Git commit and push
         run: |
           git config --local user.name "${{ github.workflow }}"
           git config --local user.email ""
