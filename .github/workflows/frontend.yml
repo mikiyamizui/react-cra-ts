@@ -5,6 +5,7 @@ on:
     branches: [main]
 
 env:
+  TZ: Asia/Tokyo
   ref: ${{ github.head_ref || github.ref_name }}
   github_pages_branch_name: github-pages
   github_pages_branch_dir: docs/${{ github.head_ref || github.ref_name }}
