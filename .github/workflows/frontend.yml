@@ -151,7 +151,7 @@ jobs:
           cat << EOF > commit-message
           ${{ env.ref }} (${{
             (github.event_name == 'pull_request' &&
-              format('{0}/{1}', github.event_name, github.event.action)) ||
+              format('{0}, {1}', github.event_name, github.event.action)) ||
               format('{0}', github.event_name)
           }})
           Triggered via ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} ${{ (github.event.after != '' && format('(Commit {0})', github.event.after)) || '' }}
