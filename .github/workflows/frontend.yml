@@ -149,7 +149,7 @@ jobs:
         run: |
           cat << EOF > commit-message
           ${{ env.ref }} (${{ github.event_name }})
-          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} ${{ (github.event.after != '' && format('(Commit {0})', github.event.after)) || '' }}
+          Triggered via ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} ${{ (github.event.after != '' && format('(Commit {0})', github.event.after)) || '' }}
           EOF
           git config --local user.name "${{ github.workflow }}"
           git config --local user.email ""
