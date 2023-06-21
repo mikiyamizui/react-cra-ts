@@ -127,9 +127,6 @@ jobs:
       contents: write
       pages: write
       id-token: write
-      pull-requests: write
-    env:
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -156,6 +153,15 @@ jobs:
           git add docs
           git commit -F commit-message
           git push origin ${{ env.github_pages_branch_name }}
+
+  pr-comment:
+    needs: [github-pages]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
       - name: Create PR comment
         run: |
           cat << EOF >> pr-comment
