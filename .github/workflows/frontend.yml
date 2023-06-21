@@ -185,10 +185,10 @@ jobs:
           ### Storybook
           ${{ env.github_pages_branch_url }}/storybook
           ### Coverage
+          ${{ env.github_pages_branch_url }}/lcov-report
           \`\`\`
           $(cat coverage/text)
           \`\`\`
-          ${{ env.github_pages_branch_url }}/lcov-report
           EOF
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
