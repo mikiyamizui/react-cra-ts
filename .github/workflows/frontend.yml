@@ -20,11 +20,11 @@ env:
 #   cancel-in-progress: true
 
 jobs:
-  debug:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - run: echo "${{ toJson(github) }}"
+  # debug:
+  #   runs-on: ubuntu-latest
+  #   continue-on-error: true
+  #   steps:
+  #     - run: echo "${{ toJson(github) }}"
 
   setup:
     runs-on: ubuntu-latest
