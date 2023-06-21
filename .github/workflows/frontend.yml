@@ -206,12 +206,12 @@ jobs:
           cat << EOF >> pr-comment
           ### Coverage
           ${{ env.github_pages_branch_url }}/lcov-report
-          ```
+          \`\`\`
           EOF
       - run: cat coverage/text >> pr-comment
       - run: |
           cat << EOF >> pr-comment
-          ```
+          \`\`\`
           ### Storybook
           ${{ env.github_pages_branch_url }}/storybook
           EOF
