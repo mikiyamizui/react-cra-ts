@@ -166,10 +166,10 @@ jobs:
       - name: Create PR comment
         run: |
           cat << EOF >> pr-comment
-          ## Github Pages
-          - Storybook  
+          ## GitHub Pages
+          - Storybook
           ${{ env.github_pages_branch_url }}/storybook
-          - Coverage  
+          - Coverage
           ${{ env.github_pages_branch_url }}/lcov-report
           EOF
       - uses: marocchino/sticky-pull-request-comment@v2
